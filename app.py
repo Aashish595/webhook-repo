@@ -13,11 +13,12 @@ app = Flask(__name__)
 
 # MongoDB connection helper
 def get_db():
-    """Connect to MongoDB and return database object"""
     client = MongoClient(
         os.getenv("MONGODB_URI"),
-        connectTimeoutMS=5000,
-        serverSelectionTimeoutMS=5000
+        connectTimeoutMS=30000,  # Increased from 5000
+        serverSelectionTimeoutMS=30000,  # Increased from 5000
+        tls=True,  # Explicitly enable TLS
+        tlsAllowInvalidCertificates=False  # More secure than True
     )
     client.admin.command('ping')  # Test connection
     db = client[os.getenv("MONGO_DB_NAME", "webhook_db")]
@@ -78,12 +79,16 @@ def home():
 
 @app.route("/health")
 def health_check():
-    """Simple health endpoint"""
     try:
         db.command('ping')
-        return jsonify({"status": "healthy"})
+        return jsonify({"status": "healthy", "db": "connected"})
     except Exception as e:
-        return jsonify({"status": "down", "error": str(e)}), 500
+        logger.error(f"DB connection failed: {str(e)}")
+        return jsonify({
+            "status": "down",
+            "error": str(e),
+            "solution": "Check MongoDB URI and network settings"
+        }), 500
 
 
 
