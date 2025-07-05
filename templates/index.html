@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GitHub Webhook Events Viewer</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; }
+    h1 { text-align: center; }
+    .event { border-bottom: 1px solid #ccc; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Recent GitHub Events</h1>
+  <div id="events"></div>
+
+  <script>
+    async function fetchEvents() {
+      const res = await fetch("/events");
+      const events = await res.json();
+      const container = document.getElementById("events");
+      container.innerHTML = ""; // Clear old content
+
+      events.forEach(e => {
+        let msg = "";
+        const dateStr = new Date(e.timestamp).toUTCString();
+        if (e.type === "push") {
+          msg = `${e.author} pushed to ${e.branch} on ${dateStr}`;
+        } else if (e.type === "pull_request") {
+          msg = `${e.author} submitted a pull request from ${e.from_branch} to ${e.to_branch} on ${dateStr}`;
+        }
+        const el = document.createElement("div");
+        el.className = "event";
+        el.textContent = msg;
+        container.appendChild(el);
+      });
+    }
+
+    setInterval(fetchEvents, 15000);
+    fetchEvents();
+  </script>
+</body>
+</html>
