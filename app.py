@@ -210,8 +210,9 @@ def home():
 app_start_time = datetime.utcnow()
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # <-- this uses Railway's PORT env var if set
     app.run(
-        host=os.getenv("FLASK_HOST", "0.0.0.0"),
-        port=int(os.getenv("FLASK_PORT", 8080)),
+        host="0.0.0.0",
+        port=port,
         debug=os.getenv("FLASK_DEBUG", "false").lower() == "true"
     )
