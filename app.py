@@ -26,16 +26,16 @@ app = Flask(__name__)
 # Database connection helper function
 def get_db():
     try:
-        # Use certifi to provide trusted CA certificates for TLS
         client = MongoClient(
             os.getenv("MONGODB_URI"),
-            tlsCAFile=certifi.where()
+            connectTimeoutMS=20000,
+            serverSelectionTimeoutMS=20000,
+            tls=True,
+            tlsAllowInvalidCertificates=False,
+            tlsCAFile=certifi.where()   # <== 👈 this line ensures correct CA bundle
         )
-        # Ping the MongoDB server to confirm connection
         client.admin.command('ping')
-        # Get the target database
         db = client[os.getenv("MONGO_DB_NAME", "webhook_db")]
-        # Ensure index on timestamp for efficient sorting
         db.events.create_index("timestamp")
         return db
     except Exception as e:
