@@ -2,11 +2,20 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>GitHub Webhook Events Viewer</title>
+  <title>GitHub Webhook Events</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: auto; }
-    h1 { text-align: center; }
-    .event { border-bottom: 1px solid #ccc; padding: 10px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      max-width: 800px; 
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .event {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -14,29 +23,36 @@
   <div id="events"></div>
 
   <script>
-    async function fetchEvents() {
-      const res = await fetch("/events");
-      const events = await res.json();
-      const container = document.getElementById("events");
-      container.innerHTML = ""; // Clear old content
-
-      events.forEach(e => {
-        let msg = "";
-        const dateStr = new Date(e.timestamp).toUTCString();
-        if (e.type === "push") {
-          msg = `${e.author} pushed to ${e.branch} on ${dateStr}`;
-        } else if (e.type === "pull_request") {
-          msg = `${e.author} submitted a pull request from ${e.from_branch} to ${e.to_branch} on ${dateStr}`;
-        }
-        const el = document.createElement("div");
-        el.className = "event";
-        el.textContent = msg;
-        container.appendChild(el);
-      });
+    async function loadEvents() {
+      try {
+        const response = await fetch('/api/events');
+        const events = await response.json();
+        const container = document.getElementById('events');
+        
+        container.innerHTML = events.map(event => `
+          <div class="event">
+            <strong>${new Date(event.timestamp).toLocaleString()}</strong>
+            <div>${getEventMessage(event)}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading events:', error);
+      }
     }
 
-    setInterval(fetchEvents, 15000);
-    fetchEvents();
+    function getEventMessage(event) {
+      if (event.event_type === 'push') {
+        return `${event.author} pushed to ${event.to_branch}`;
+      }
+      if (event.event_type === 'pull_request') {
+        return `${event.author} created PR: ${event.from_branch} → ${event.to_branch}`;
+      }
+      return `Unknown event type: ${event.event_type}`;
+    }
+
+    // Load immediately and every 15 seconds
+    loadEvents();
+    setInterval(loadEvents, 15000);
   </script>
 </body>
 </html>
