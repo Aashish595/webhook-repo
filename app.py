@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import os
 import logging
 import certifi
+from pymongo import MongoClient, errors
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,22 +27,18 @@ app = Flask(__name__)
 # Database connection helper function
 def get_db():
     try:
+        ca = certifi.where()
         client = MongoClient(
-            os.getenv("MONGODB_URI"),
-            connectTimeoutMS=20000,
-            serverSelectionTimeoutMS=20000,
-            tls=True,
-            tlsAllowInvalidCertificates=False,
-            tlsCAFile=certifi.where()   # <== 👈 this line ensures correct CA bundle
+            'your-mongo-uri',
+            tlsCAFile=ca
         )
         client.admin.command('ping')
-        db = client[os.getenv("MONGO_DB_NAME", "webhook_db")]
-        db.events.create_index("timestamp")
-        return db
-    except Exception as e:
-        logger.error(f"Database connection failed: {str(e)}")
+        print("✅ Connected to MongoDB")
+        return client['your-db-name']
+    except errors.ServerSelectionTimeoutError as e:
+        print(f"❌ Database connection failed: {e}")
         raise e
-
+    
 # Initialize database connection
 db = get_db()
 
